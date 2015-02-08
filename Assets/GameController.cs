@@ -4,6 +4,7 @@ using System.Collections;
 public class GameController : MonoBehaviour {
 
 	public Transform nodeTypesParent;
+	public static Transform nodeTypesParentStatic;
 
 	// Use this for initialization
 	void Start () {
@@ -39,6 +40,8 @@ public class GameController : MonoBehaviour {
 		LineRenderer thirdLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
 		thirdLine.SetPosition (0, startNode.transform.position);
 		thirdLine.SetPosition (1, thirdNode.transform.position);
+
+		nodeTypesParentStatic = nodeTypesParent;
 	}
 	
 	// Update is called once per frame
