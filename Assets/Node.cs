@@ -1,8 +1,31 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 [RequireComponent (typeof (BoxCollider2D))]
 public class Node : MonoBehaviour {
+
+	public GameController gameController;
+	public Node parent = null;
+	public List<Node> children = new List<Node>();
+
+	public bool hidden = false;
+	public float traceStart;
+	public bool runningTrace = false;
+
+	public float hideStart;
+	public bool runningHide = false;
+
+	public float showStart;
+	public bool runningShow = false;
+
+	public float slideStart;
+	public Vector3 origin;
+	public Vector3 destination;
+	public bool runningSlide = false;
+
+	public LineRenderer connection;
+	public LineRenderer trace;
 
 	// Use this for initialization
 	void Start () {
@@ -11,47 +34,134 @@ public class Node : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+		if (runningTrace) {
+			TraceStep ();
+		}
+		if (runningHide) {
+			HideStep ();
+		}
+		if (runningShow) {
+			ShowStep ();
+		}
+		if (runningSlide) {
+			SlideStep ();
+		}
 	}
 
 	void OnMouseDown() {
-		Node[] all = Object.FindObjectsOfType (typeof(Node)) as Node[];
-		foreach (Node obj in all) {
-			if (obj.transform.parent != GameController.nodeTypesParentStatic) {
-				obj.transform.renderer.enabled = false;
-				obj.collider2D.enabled = false;
-			}
+		//Don't trace yourself
+		if (GameController.playerNode != this) {
+			Trace ();
 		}
+	}
 
-		this.transform.renderer.enabled = true;
-		Node[] nodeTypes = GameController.nodeTypesParentStatic.GetComponentsInChildren<Node>();
-		this.transform.position = PlayerStart.instance.transform.position;
+	void Trace() {
+		traceStart = Time.time;
+
+		trace = (LineRenderer)Instantiate (TraceLineRenderer.instance);
+		trace.SetPosition (0, Util.ZDelta (GameController.playerNode.transform.position,GameController.TRACE_ZDELTA));
+		runningTrace = true;
+	}
+	void TraceStep() {
+		//TODO: Move all this to a Trace line object
+		float currTime = Time.time - traceStart;
+		trace.SetPosition(1,Vector3.Lerp(Util.ZDelta(GameController.playerNode.transform.position,GameController.TRACE_ZDELTA),
+		                                 Util.ZDelta(transform.position,GameController.TRACE_ZDELTA),currTime));
+		if (currTime > 1.0f) {
+			runningTrace = false;
+			TraceComplete();
+		}
+	}
+	void TraceComplete() {
+		//TODO: Adjust this so that a "player camera" is what slides instead of the playerNode (conceptually)
+		Node playerNode = GameController.playerNode;
+		Vector3 origPos = playerNode.transform.position;
+		Vector3 delta = transform.position - playerNode.transform.position;
+		playerNode.SlideTo(playerNode.transform.position - delta);
+
+		//TODO: Reorg nodes, parent animations affecting children is an issue
+		//transform.parent.GetComponent<Node>().Hide();
+	}
+
+	void Hide() {
+		hideStart = Time.time;
+
+		runningHide = true;
+	}
+	void HideStep() {
+		float currTime = Time.time - hideStart;
+
+		transform.localScale = Vector3.Lerp (transform.localScale, new Vector3 (0, 0, 1), currTime);
+
+		if (currTime > 0.5f) {
+			transform.localScale = new Vector3(0,0,1);
+			runningHide = false;
+			hidden = true;
+		}
+	}
+
+	void Show() {
+		showStart = Time.time;
+
+		runningShow = true;
+	}
+	void ShowStep() {
+		float currTime = Time.time - showStart;
 		
-		Node firstNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		firstNode.transform.position = new Vector3(this.transform.position.x + .1f,
-		                                           this.transform.position.y + 2f,
-		                                           this.transform.position.z);
-		firstNode.transform.parent = this.transform;
-		/*LineRenderer firstLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		firstLine.SetPosition (0,this.transform.position);
-		firstLine.SetPosition (1, firstNode.transform.position);*/
+		transform.localScale = Vector3.Lerp (transform.localScale, new Vector3 (1, 1, 1), currTime);
 		
-		Node secondNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		secondNode.transform.position = new Vector3(this.transform.position.x + 2f,
-		                                            this.transform.position.y + .1f,
-		                                            this.transform.position.z);
-		secondNode.transform.parent = this.transform;
-		/*LineRenderer secondLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		secondLine.SetPosition (0, this.transform.position);
-		secondLine.SetPosition (1, secondNode.transform.position);*/
+		if (currTime > 0.5f) {
+			transform.localScale = new Vector3(1,1,1);
+			runningShow = false;
+			hidden = false;
+		}
+	}
+
+	void SlideTo(Vector3 slideDestination) {
+		destination = slideDestination;
+		origin = transform.position;
+		slideStart = Time.time;
+
+		runningSlide = true;
+	}
+	void SlideStep() {
+		float currTime = Time.time - slideStart;
+		float speed = 2.0f;
 		
-		Node thirdNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		thirdNode.transform.position = new Vector3(this.transform.position.x + 1.5f,
-		                                           this.transform.position.y + 1.5f,
-		                                           this.transform.position.z);
-		thirdNode.transform.parent = this.transform;
-		/*LineRenderer thirdLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		thirdLine.SetPosition (0, this.transform.position);
-		thirdLine.SetPosition (1, thirdNode.transform.position);*/
+		transform.position = Vector3.Lerp (origin, destination, currTime * speed);
+
+		if (currTime > 1/speed) {
+			runningSlide = false;
+		}
+	}
+
+	void HideConnection() {
+		connection.renderer.enabled = false;
+		trace.renderer.enabled = false;
+	}
+	void ShowConnection() {
+		connection.renderer.enabled = true;
+		trace.renderer.enabled = true;
+	}
+
+	void AddChild(Node child) {
+		children.Add (child);
+	}
+	void RemoveChild(Node child) {
+		children.Remove (child);
+		RemoveHelper (child);
+	}
+	void RemoveHelper(Node node) {
+		foreach (Node child in node.GetChildren()) {
+			RemoveHelper (child);
+		}
+		node.Remove ();
+	}
+	void Remove() {
+		parent.RemoveChild (this);
+	}
+
+	List<Node> GetChildren() {
+		return null;
 	}
 }
