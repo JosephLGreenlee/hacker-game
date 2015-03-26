@@ -34,6 +34,7 @@ public class GameController : MonoBehaviour {
 		firstLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
 		firstLine.SetPosition (1, Util.ZDelta(firstNode.transform.position,CONNECTION_ZDELTA));
 		firstNode.connection = firstLine;
+		playerNode.AddChild (firstNode);
 
 		Node secondNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
 		secondNode.transform.position = new Vector3(playerNode.transform.position.x + 2f,
@@ -44,6 +45,7 @@ public class GameController : MonoBehaviour {
 		secondLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
 		secondLine.SetPosition (1, Util.ZDelta(secondNode.transform.position,CONNECTION_ZDELTA));
 		secondNode.connection = secondLine;
+		playerNode.AddChild (secondNode);
 		
 		Node thirdNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
 		thirdNode.transform.position = new Vector3(playerNode.transform.position.x + 1.5f,
@@ -54,6 +56,7 @@ public class GameController : MonoBehaviour {
 		thirdLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
 		thirdLine.SetPosition (1, Util.ZDelta(thirdNode.transform.position,CONNECTION_ZDELTA));
 		thirdNode.connection = thirdLine;
+		playerNode.AddChild (thirdNode);
 
 		nodeTypesParentStatic = nodeTypesParent;
 	}

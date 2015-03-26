@@ -52,10 +52,11 @@ public class Node : MonoBehaviour {
 		//Don't trace yourself
 		if (GameController.playerNode != this) {
 			Trace ();
+			//GameController.playerNode.RemoveChild(this);
 		}
 	}
 
-	void Trace() {
+	public void Trace() {
 		traceStart = Time.time;
 
 		trace = (LineRenderer)Instantiate (TraceLineRenderer.instance);
@@ -83,7 +84,7 @@ public class Node : MonoBehaviour {
 		//transform.parent.GetComponent<Node>().Hide();
 	}
 
-	void Hide() {
+	public void Hide() {
 		hideStart = Time.time;
 
 		runningHide = true;
@@ -100,7 +101,7 @@ public class Node : MonoBehaviour {
 		}
 	}
 
-	void Show() {
+	public void Show() {
 		showStart = Time.time;
 
 		runningShow = true;
@@ -117,14 +118,14 @@ public class Node : MonoBehaviour {
 		}
 	}
 
-	void SlideTo(Vector3 slideDestination) {
+	public void SlideTo(Vector3 slideDestination) {
 		destination = slideDestination;
 		origin = transform.position;
 		slideStart = Time.time;
 
 		runningSlide = true;
 	}
-	void SlideStep() {
+	public void SlideStep() {
 		float currTime = Time.time - slideStart;
 		float speed = 2.0f;
 		
@@ -135,33 +136,33 @@ public class Node : MonoBehaviour {
 		}
 	}
 
-	void HideConnection() {
+	public void HideConnection() {
 		connection.renderer.enabled = false;
 		trace.renderer.enabled = false;
 	}
-	void ShowConnection() {
+	public void ShowConnection() {
 		connection.renderer.enabled = true;
 		trace.renderer.enabled = true;
 	}
 
-	void AddChild(Node child) {
+	public void AddChild(Node child) {
 		children.Add (child);
 	}
-	void RemoveChild(Node child) {
+	public void RemoveChild(Node child) {
 		children.Remove (child);
 		RemoveHelper (child);
 	}
-	void RemoveHelper(Node node) {
-		foreach (Node child in node.GetChildren()) {
+	public void RemoveHelper(Node node) {
+		foreach (Node child in children) {
 			RemoveHelper (child);
 		}
 		node.Remove ();
 	}
-	void Remove() {
+	public void Remove() {
 		parent.RemoveChild (this);
 	}
 
-	List<Node> GetChildren() {
-		return null;
+	public List<Node> GetChildren() {
+		return children;
 	}
 }
