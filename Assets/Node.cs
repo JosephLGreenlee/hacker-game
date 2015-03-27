@@ -76,12 +76,13 @@ public class Node : MonoBehaviour {
 	void TraceComplete() {
 		//TODO: Adjust this so that a "player camera" is what slides instead of the playerNode (conceptually)
 		Node playerNode = GameController.playerNode;
-		Vector3 origPos = playerNode.transform.position;
+		Vector3 origPos = PlayerStart.instance.transform.position;
 		Vector3 delta = transform.position - playerNode.transform.position;
-		playerNode.SlideTo(playerNode.transform.position - delta);
+		gameController.SlideNodesBy (delta * 3);
+		this.SlideBy (delta);
 
-		//TODO: Reorg nodes, parent animations affecting children is an issue
-		//transform.parent.GetComponent<Node>().Hide();
+		GameController.playerNode = this;
+		gameController.Invoke("SpawnNodes",0.5f);
 	}
 
 	public void Hide() {
@@ -125,6 +126,13 @@ public class Node : MonoBehaviour {
 
 		runningSlide = true;
 	}
+	public void SlideBy(Vector3 slideDelta) {
+		destination = transform.position - slideDelta;
+		origin = transform.position;
+		slideStart = Time.time;
+		
+		runningSlide = true;
+	}
 	public void SlideStep() {
 		float currTime = Time.time - slideStart;
 		float speed = 2.0f;
@@ -133,7 +141,11 @@ public class Node : MonoBehaviour {
 
 		if (currTime > 1/speed) {
 			runningSlide = false;
+			SlideComplete ();
 		}
+	}
+	public void SlideComplete() {
+		//Do Nothing
 	}
 
 	public void HideConnection() {
@@ -147,6 +159,7 @@ public class Node : MonoBehaviour {
 
 	public void AddChild(Node child) {
 		children.Add (child);
+		child.parent = this;
 	}
 	public void RemoveChild(Node child) {
 		children.Remove (child);
@@ -160,6 +173,10 @@ public class Node : MonoBehaviour {
 	}
 	public void Remove() {
 		parent.RemoveChild (this);
+	}
+
+	public Node GetParent() {
+		return parent;
 	}
 
 	public List<Node> GetChildren() {

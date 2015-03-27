@@ -11,11 +11,12 @@ public class GameController : MonoBehaviour {
 	public static Transform nodeTypesParentStatic;
 	public int numberOfLevels;
 	public static Node playerNode;
+	public Node[] nodeTypes;
 
 	// Use this for initialization
 	void Start () {
 		//TODO: Let NodeTypes handle this behavior?
-		Node[] nodeTypes = nodeTypesParent.GetComponentsInChildren<Node>();
+		nodeTypes = nodeTypesParent.GetComponentsInChildren<Node>();
 		Node playerNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
 		GameController.playerNode = playerNode;
 
@@ -24,39 +25,13 @@ public class GameController : MonoBehaviour {
 
 		//Add a child
 		Node firstNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		//Position the child
-		firstNode.transform.position = new Vector3(playerNode.transform.position.x + .1f,
-		                                           playerNode.transform.position.y + 2f,
-		                                           playerNode.transform.position.z);
-		firstNode.transform.parent = playerNode.transform;
-		//Draw a line to the child
-		LineRenderer firstLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		firstLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
-		firstLine.SetPosition (1, Util.ZDelta(firstNode.transform.position,CONNECTION_ZDELTA));
-		firstNode.connection = firstLine;
-		playerNode.AddChild (firstNode);
+		AddNode (firstNode);
 
 		Node secondNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		secondNode.transform.position = new Vector3(playerNode.transform.position.x + 2f,
-		                                            playerNode.transform.position.y + .1f,
-		                                            playerNode.transform.position.z);
-		secondNode.transform.parent = playerNode.transform;
-		LineRenderer secondLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		secondLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
-		secondLine.SetPosition (1, Util.ZDelta(secondNode.transform.position,CONNECTION_ZDELTA));
-		secondNode.connection = secondLine;
-		playerNode.AddChild (secondNode);
+		AddNode (secondNode);
 		
 		Node thirdNode = (Node)Instantiate(nodeTypes [Random.Range (0, nodeTypes.Length)]);
-		thirdNode.transform.position = new Vector3(playerNode.transform.position.x + 1.5f,
-		                                           playerNode.transform.position.y + 1.5f,
-		                                           playerNode.transform.position.z);
-		thirdNode.transform.parent = playerNode.transform;
-		LineRenderer thirdLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
-		thirdLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
-		thirdLine.SetPosition (1, Util.ZDelta(thirdNode.transform.position,CONNECTION_ZDELTA));
-		thirdNode.connection = thirdLine;
-		playerNode.AddChild (thirdNode);
+		AddNode (thirdNode);
 
 		nodeTypesParentStatic = nodeTypesParent;
 	}
@@ -70,18 +45,34 @@ public class GameController : MonoBehaviour {
 		List<Node> children = GetNodes ();
 		foreach (Node child in children) {
 			if (child.connection) {
-				child.connection.SetPosition(0,Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
+				child.connection.SetPosition(0,Util.ZDelta(child.parent.transform.position,CONNECTION_ZDELTA));
 				child.connection.SetPosition(1,Util.ZDelta(child.transform.position,CONNECTION_ZDELTA));
 			}
 			if (child.trace) {
-				child.trace.SetPosition(0,Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
+				child.trace.SetPosition(0,Util.ZDelta(child.parent.transform.position,CONNECTION_ZDELTA));
 				child.trace.SetPosition(1,Util.ZDelta(child.transform.position,CONNECTION_ZDELTA));
 			}
 		}
 	}
 
 	public void TrimNodes() {
-		
+		Node current = playerNode;
+		for (int i = 0; i < 2; i++) {
+			if (current.GetParent() == null) {
+				return;
+			}
+			current = current.GetParent();
+		}
+		//Do something with current (kill everything but its descendants?)
+	}
+
+	public void SpawnNodes() {
+		Node newNode = (Node)Instantiate (nodeTypes [Random.Range (0, nodeTypes.Length)]);
+		AddNode (newNode);
+		newNode = (Node)Instantiate (nodeTypes [Random.Range (0, nodeTypes.Length)]);
+		AddNode (newNode);
+		newNode = (Node)Instantiate (nodeTypes [Random.Range (0, nodeTypes.Length)]);
+		AddNode (newNode);
 	}
 
 	public List<Node> GetNodes() {
@@ -93,15 +84,26 @@ public class GameController : MonoBehaviour {
 		return ilist;
 	}
 
-	/*void GetChildrenHelper(Node parent, List<Node> ilist) {
-		ilist.Add (parent);
-		Node[] children = GetComponentsInChildren<Node>();
-		foreach (Node child in children) {
-			GetChildrenHelper(child,ilist);
-		}
-	}*/
-
 	public void AddNode(Node child) {
-		
+		playerNode.AddChild (child);
+		child.transform.parent = this.transform;
+
+		float rand = Random.Range (0f, 2f);
+		child.transform.position = new Vector3(PlayerStart.instance.transform.position.x + rand,
+		                                       PlayerStart.instance.transform.position.y + (2f-rand),
+		                                       PlayerStart.instance.transform.position.z);
+		//Draw a line to the child
+		LineRenderer firstLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
+		firstLine.SetPosition (0, Util.ZDelta(playerNode.transform.position,CONNECTION_ZDELTA));
+		firstLine.SetPosition (1, Util.ZDelta(child.transform.position,CONNECTION_ZDELTA));
+		child.connection = firstLine;
+		child.connection.transform.parent = child.transform;
+	}
+
+	public void SlideNodesBy(Vector3 slideDelta) {
+		List<Node> nodes = GetNodes ();
+		foreach (Node node in nodes) {
+			node.SlideBy(slideDelta);		
+		}
 	}
 }
