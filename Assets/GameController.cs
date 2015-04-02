@@ -85,12 +85,12 @@ public class GameController : MonoBehaviour {
 	}
 
 	public void AddNode(Node child) {
+		int cnt = playerNode.children.Count;
 		playerNode.AddChild (child);
 		child.transform.parent = this.transform;
 
-		float rand = Random.Range (0f, 2f);
-		child.transform.position = new Vector3(PlayerStart.instance.transform.position.x + rand,
-		                                       PlayerStart.instance.transform.position.y + (2f-rand),
+		child.transform.position = new Vector3(PlayerStart.instance.transform.position.x + cnt + Random.Range(-.2f,.5f),
+		                                       PlayerStart.instance.transform.position.y + 2-cnt + Random.Range(-.2f,.5f),
 		                                       PlayerStart.instance.transform.position.z);
 		//Draw a line to the child
 		LineRenderer firstLine = (LineRenderer)Instantiate (NodeLineRenderer.instance);
